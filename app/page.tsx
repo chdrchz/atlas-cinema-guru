@@ -1,7 +1,7 @@
 export default async function Page() {
   return (
     <div className="flex items-center justify-center h-screen">
-      Hello Cinema Guru
+      This will eventually be my login page
     </div>
   );
 }
