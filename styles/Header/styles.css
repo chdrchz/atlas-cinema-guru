@@ -1,0 +1,7 @@
+.container-header {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background-color: blue;
+    z-index: 1000;
+}
