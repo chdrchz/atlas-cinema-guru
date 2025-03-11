@@ -1,0 +1,8 @@
+.container-input {
+    flex: 1; /* Allows it to expand inside flexbox */
+    width: auto;
+}
+
+.container-input input {
+    width: 100%;
+}

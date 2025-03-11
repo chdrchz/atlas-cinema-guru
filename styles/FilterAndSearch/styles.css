@@ -1,0 +1,12 @@
+.container-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.min-max-year {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+}

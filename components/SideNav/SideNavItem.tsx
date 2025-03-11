@@ -1,5 +1,8 @@
-export default function SideNavItem(item) {
+import { ReactNode } from "react"
+import Button from "../Button"
+
+export default function SideNavItem({ children }: {chidren: ReactNode}) {
     return (
-        <div>{item.children}</div>
+        <Button>{children}</Button>
     )
 }

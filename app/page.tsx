@@ -1,7 +1,9 @@
+import FilterAndSearch from "@/components/FilterAndSearch";
+
 export default async function Page() {
   return (
-    <div className="flex items-center justify-center h-screen">
-      This is the home page
+    <div>
+      <FilterAndSearch />
     </div>
   );
 }

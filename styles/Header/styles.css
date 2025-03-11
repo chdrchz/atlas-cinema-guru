@@ -1,7 +1,17 @@
 .container-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     position: sticky;
     top: 0;
     width: 100%;
     background-color: blue;
     z-index: 1000;
+}
+
+.container-header-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
