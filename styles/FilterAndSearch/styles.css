@@ -7,6 +7,6 @@
 
 .min-max-year {
     display: flex;
-    gap: 10px;
-    flex: 1;
+    flex-direction: row;
+    justify-content: space-between;
 }
