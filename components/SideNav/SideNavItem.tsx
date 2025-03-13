@@ -1,8 +1,16 @@
-import { ReactNode } from "react"
-import Button from "../Button"
+import Button from "../Button";
+import { ElementType } from "react";
 
-export default function SideNavItem({ children }: {chidren: ReactNode}) {
+interface SideNavItemProps {
+    title: string;
+    icon?: ElementType;
+}
+
+export default function SideNavItem({ title, icon: Icon }: SideNavItemProps) {
     return (
-        <Button>{children}</Button>
+        <Button>
+            {Icon && <Icon />}
+            {title}
+        </Button>
     )
 }
