@@ -1,12 +1,21 @@
 .container-filter {
+    width: 100%;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    width: 100%;
+    gap: 1rem;
 }
 
 .min-max-year {
     display: flex;
-    flex-direction: row;
+    gap: 1rem;
     justify-content: space-between;
+}
+
+.min-year {
+    width: 100%;
+}
+
+.max-year {
+    width: 100%;
 }
