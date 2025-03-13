@@ -8,10 +8,17 @@
     width: 100%;
     background-color: blue;
     z-index: 1000;
+    padding: 0.5rem;
 }
 
 .container-header-user {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.app-title {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
 }
