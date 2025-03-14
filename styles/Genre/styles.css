@@ -1,6 +1,7 @@
 .button-genre {
-    background-color: brown;
-    border-radius: 20px;
+    border-radius: 25;
+    border-color: aqua;
+    border-width: 2;
     width: 6rem;
     height: 2.5rem;
 }
@@ -13,6 +14,10 @@
 }
 
 .genre-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    gap: 0.5rem;
     width: 30%;
     padding: 0.5rem;
 }

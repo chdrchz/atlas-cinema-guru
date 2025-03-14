@@ -8,3 +8,7 @@
     justify-content: space-around;
     padding: 2rem;
 }
+
+.img-movie {
+    border-radius: 25;
+}
