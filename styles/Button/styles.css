@@ -8,8 +8,10 @@
 
 .button-header {
     color: #00003C;
+    cursor: pointer;
 }
 
 .button-sidenav {
     color: white;
+    cursor: pointer;
 }
