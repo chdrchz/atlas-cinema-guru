@@ -8,7 +8,7 @@ interface SideNavItemProps {
 
 export default function SideNavItem({ title, icon: Icon }: SideNavItemProps) {
     return (
-        <Button>
+        <Button className="button-sidenav">
             {Icon && <Icon />}
             {title}
         </Button>

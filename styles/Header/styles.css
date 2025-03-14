@@ -6,7 +6,7 @@
     position: sticky;
     top: 0;
     width: 100%;
-    background-color: blue;
+    background-color: #54F4D0;
     z-index: 1000;
     padding: 1rem;
 }
@@ -14,11 +14,16 @@
 .container-header-user {
     display: flex;
     align-items: center;
+    color: #00003C;
     gap: 10px;
 }
 
 .app-title {
     display: flex;
     flex-direction: row;
+    align-items: center;
     gap: 0.5rem;
+    color: #00003C;
+    font-weight: bold;
+    font-size: 1.5rem;
 }

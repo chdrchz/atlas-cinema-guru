@@ -5,3 +5,11 @@
     justify-content: left;
     gap: 1rem;
 }
+
+.button-header {
+    color: #00003C;
+}
+
+.button-sidenav {
+    color: white;
+}

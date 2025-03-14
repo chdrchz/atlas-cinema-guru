@@ -12,7 +12,7 @@ export default function Header() {
             </div>
             <div className="container-header-user">
                 <p>Welcome, user!</p>
-                <Button>Logout</Button>
+                <Button className="button-header">Logout</Button>
             </div>
         </div>
     )

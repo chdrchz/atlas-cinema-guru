@@ -1,9 +1,13 @@
 import { ReactNode } from "react";
-
 import "@/styles/Button/styles.css";
 
-export default function Button({ children }: {children: ReactNode}) {
-    return (
-        <button className="custom-button">{children}</button>
-    )
+interface ButtonProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export default function Button({ children, className = "" }: ButtonProps) {
+  return (
+    <button className={`custom-button ${className}`.trim()}>{children}</button>
+  );
 }
