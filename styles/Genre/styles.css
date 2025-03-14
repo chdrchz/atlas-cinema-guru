@@ -7,8 +7,8 @@
 .genre-list {
     display: flex;
     flex-wrap: wrap;
-    width: 100%;
     gap: 0.5rem;
+    justify-content: center;
 }
 
 .genre-container {
