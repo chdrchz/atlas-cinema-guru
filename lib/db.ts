@@ -1,6 +1,12 @@
 import { Generated } from "kysely";
 import { createKysely } from "@vercel/postgres-kysely";
 
+const connectionString = process.env.POSTGRES_URL;
+
+if (!connectionString) {
+  throw new Error("Database connection string not provided. Set the POSTGRES_URL environment variable.");
+}
+
 export interface Database {
   titles: TitlesTable;
   users: UsersTable;
@@ -44,4 +50,4 @@ export interface ActivitiesTable {
   activity: "FAVORITED" | "WATCH_LATER";
 }
 
-export const db = createKysely<Database>();
+export const db = createKysely<Database>({ connectionString });

@@ -1,6 +1,5 @@
-import { sql } from "@vercel/postgres";
+import { supabase } from "./supabaseClient";
 import { Question, User } from "./definitions";
-import { db } from "./db";
 
 /**
  * Query all titles
@@ -15,45 +14,56 @@ export async function fetchTitles(
 ) {
   try {
     // Get favorites title ids
-    const favorites = (
-      await db
-        .selectFrom("favorites")
-        .select("title_id")
-        .where("user_id", "=", userEmail)
-        .execute()
-    ).map((row) => row.title_id);
+    const { data: favorites, error: favoritesError } = await supabase
+      .from("favorites")
+      .select("title_id")
+      .eq("user_id", userEmail);
+
+    if (favoritesError) throw favoritesError;
+    const favoriteIds = favorites ? favorites.map((row) => row.title_id) : [];
 
     // Get watch later title ids
-    const watchLater = (
-      await db
-        .selectFrom("watchlater")
-        .select("title_id")
-        .where("user_id", "=", userEmail)
-        .execute()
-    ).map((row) => row.title_id);
+    const { data: watchLater, error: watchLaterError } = await supabase
+      .from("watchlater")
+      .select("title_id")
+      .eq("user_id", userEmail);
 
-    //Fetch titles
-    const titles = await db
-      .selectFrom("titles")
-      .selectAll("titles")
-      .where("titles.released", ">=", minYear)
-      .where("titles.released", "<=", maxYear)
-      .where("titles.title", "ilike", `%${query}%`)
-      .where("titles.genre", "in", genres)
-      .orderBy("titles.title", "asc")
-      .limit(6)
-      .offset((page - 1) * 6)
-      .execute();
+    if (watchLaterError) throw watchLaterError;
+    const watchLaterIds = watchLater ? watchLater.map((row) => row.title_id) : [];
+
+    // Build the query
+    let query_builder = supabase
+      .from("titles")
+      .select("*")
+      .gte("released", minYear)
+      .lte("released", maxYear);
+
+    // Add text search if query is provided
+    if (query && query.trim() !== "") {
+      query_builder = query_builder.ilike("title", `%${query}%`);
+    }
+
+    // Add genre filter if genres are provided
+    if (genres && genres.length > 0) {
+      query_builder = query_builder.in("genre", genres);
+    }
+
+    // Finish the query with pagination and ordering
+    const { data: titles, error: titlesError } = await query_builder
+      .order("title", { ascending: true })
+      .range((page - 1) * 6, page * 6 - 1);
+
+    if (titlesError) throw titlesError;
 
     return titles.map((row) => ({
       ...row,
-      favorited: favorites.includes(row.id),
-      watchLater: watchLater.includes(row.id),
+      favorited: favoriteIds.includes(row.id),
+      watchLater: watchLaterIds.includes(row.id),
       image: `/images/${row.id}.webp`,
     }));
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to fetch topics.");
+    throw new Error("Failed to fetch titles.");
   }
 }
 
@@ -62,29 +72,33 @@ export async function fetchTitles(
  */
 export async function fetchFavorites(page: number, userEmail: string) {
   try {
-    const watchLater = (
-      await db
-        .selectFrom("watchlater")
-        .select("title_id")
-        .where("user_id", "=", userEmail)
-        .execute()
-    ).map((row) => row.title_id);
+    // Get watch later title ids
+    const { data: watchLater, error: watchLaterError } = await supabase
+      .from("watchlater")
+      .select("title_id")
+      .eq("user_id", userEmail);
 
-    const titles = await db
-      .selectFrom("titles")
-      .selectAll("titles")
-      .innerJoin("favorites", "titles.id", "favorites.title_id")
-      .where("favorites.user_id", "=", userEmail)
-      .orderBy("titles.released", "asc")
-      .limit(6)
-      .offset((page - 1) * 6)
-      .execute();
+    if (watchLaterError) throw watchLaterError;
+    const watchLaterIds = watchLater ? watchLater.map((row) => row.title_id) : [];
+
+    // Join favorites and titles
+    const { data: titles, error: titlesError } = await supabase
+      .from("favorites")
+      .select(`
+        title_id,
+        titles:titles(*)
+      `)
+      .eq("user_id", userEmail)
+      .order("titles.released", { ascending: true })
+      .range((page - 1) * 6, page * 6 - 1);
+
+    if (titlesError) throw titlesError;
 
     return titles.map((row) => ({
-      ...row,
+      ...row.titles,
       favorited: true,
-      watchLater: watchLater.includes(row.id),
-      image: `/images/${row.id}.webp`,
+      watchLater: watchLaterIds.includes(row.title_id),
+      image: `/images/${row.title_id}.webp`,
     }));
   } catch (error) {
     console.error("Database Error:", error);
@@ -97,10 +111,14 @@ export async function fetchFavorites(page: number, userEmail: string) {
  */
 export async function insertFavorite(title_id: string, userEmail: string) {
   try {
-    const data =
-      await sql<Question>`INSERT INTO favorites (title_id, user_id) VALUES (${title_id}, ${userEmail})`;
-    insertActivity(title_id, userEmail, "FAVORITED");
-    return data.rows;
+    const { error } = await supabase
+      .from("favorites")
+      .insert({ title_id, user_id: userEmail });
+
+    if (error) throw error;
+    
+    await insertActivity(title_id, userEmail, "FAVORITED");
+    return { success: true };
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to add favorite.");
@@ -112,9 +130,14 @@ export async function insertFavorite(title_id: string, userEmail: string) {
  */
 export async function deleteFavorite(title_id: string, userEmail: string) {
   try {
-    const data =
-      await sql<Question>`DELETE FROM favorites WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
-    return data.rows;
+    const { error } = await supabase
+      .from("favorites")
+      .delete()
+      .eq("title_id", title_id)
+      .eq("user_id", userEmail);
+
+    if (error) throw error;
+    return { success: true };
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to delete favorite.");
@@ -126,9 +149,14 @@ export async function deleteFavorite(title_id: string, userEmail: string) {
  */
 export async function favoriteExists(title_id: string, userEmail: string) {
   try {
-    const data =
-      await sql<Question>`SELECT * FROM favorites WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
-    return data.rows.length > 0;
+    const { data, error } = await supabase
+      .from("favorites")
+      .select("*")
+      .eq("title_id", title_id)
+      .eq("user_id", userEmail);
+
+    if (error) throw error;
+    return data && data.length > 0;
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch favorite.");
@@ -140,29 +168,33 @@ export async function favoriteExists(title_id: string, userEmail: string) {
  */
 export async function fetchWatchLaters(page: number, userEmail: string) {
   try {
-    const favorites = (
-      await db
-        .selectFrom("favorites")
-        .select("title_id")
-        .where("user_id", "=", userEmail)
-        .execute()
-    ).map((row) => row.title_id);
+    // Get favorites title ids
+    const { data: favorites, error: favoritesError } = await supabase
+      .from("favorites")
+      .select("title_id")
+      .eq("user_id", userEmail);
 
-    const titles = await db
-      .selectFrom("titles")
-      .selectAll("titles")
-      .innerJoin("watchlater", "titles.id", "watchlater.title_id")
-      .where("watchlater.user_id", "=", userEmail)
-      .orderBy("titles.released", "asc")
-      .limit(6)
-      .offset((page - 1) * 6)
-      .execute();
+    if (favoritesError) throw favoritesError;
+    const favoriteIds = favorites ? favorites.map((row) => row.title_id) : [];
+
+    // Join watchlater and titles
+    const { data: titles, error: titlesError } = await supabase
+      .from("watchlater")
+      .select(`
+        title_id,
+        titles:titles(*)
+      `)
+      .eq("user_id", userEmail)
+      .order("titles.released", { ascending: true })
+      .range((page - 1) * 6, page * 6 - 1);
+
+    if (titlesError) throw titlesError;
 
     return titles.map((row) => ({
-      ...row,
-      favorited: favorites.includes(row.id),
+      ...row.titles,
+      favorited: favoriteIds.includes(row.title_id),
       watchLater: true,
-      image: `/images/${row.id}.webp`,
+      image: `/images/${row.title_id}.webp`,
     }));
   } catch (error) {
     console.error("Database Error:", error);
@@ -175,11 +207,14 @@ export async function fetchWatchLaters(page: number, userEmail: string) {
  */
 export async function insertWatchLater(title_id: string, userEmail: string) {
   try {
-    const data =
-      await sql<Question>`INSERT INTO watchLater (title_id, user_id) VALUES (${title_id}, ${userEmail})`;
+    const { error } = await supabase
+      .from("watchlater")
+      .insert({ title_id, user_id: userEmail });
 
-    insertActivity(title_id, userEmail, "WATCH_LATER");
-    return data.rows;
+    if (error) throw error;
+    
+    await insertActivity(title_id, userEmail, "WATCH_LATER");
+    return { success: true };
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to add watchLater.");
@@ -191,9 +226,14 @@ export async function insertWatchLater(title_id: string, userEmail: string) {
  */
 export async function deleteWatchLater(title_id: string, userEmail: string) {
   try {
-    const data =
-      await sql`DELETE FROM watchLater WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
-    return data.rows;
+    const { error } = await supabase
+      .from("watchlater")
+      .delete()
+      .eq("title_id", title_id)
+      .eq("user_id", userEmail);
+
+    if (error) throw error;
+    return { success: true };
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to add watchLater.");
@@ -208,9 +248,14 @@ export async function watchLaterExists(
   userEmail: string
 ): Promise<boolean> {
   try {
-    const data =
-      await sql`SELECT * FROM watchLater WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
-    return data.rows.length > 0;
+    const { data, error } = await supabase
+      .from("watchlater")
+      .select("*")
+      .eq("title_id", title_id)
+      .eq("user_id", userEmail);
+
+    if (error) throw error;
+    return data && data.length > 0;
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch watchLater.");
@@ -221,37 +266,51 @@ export async function watchLaterExists(
  * Get all genres for titles.
  */
 export async function fetchGenres(): Promise<string[]> {
-  const data = await sql<{ genre: string }>`
-        SELECT DISTINCT titles.genre
-        FROM titles;
-      `;
-  return data.rows.map((row) => row.genre);
+  try {
+    const { data, error } = await supabase
+      .from("titles")
+      .select("genre")
+      .order("genre");
+
+    if (error) throw error;
+    
+    // Extract unique genres
+    const uniqueGenres = [...new Set(data.map(item => item.genre))];
+    return uniqueGenres;
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch genres.");
+  }
 }
 
 /**
- * Get a users favorites list.
+ * Get a users activity list.
  */
 export async function fetchActivities(page: number, userEmail: string) {
   try {
-    const activities = await db
-      .selectFrom("activities")
-      .innerJoin("titles", "activities.title_id", "titles.id")
-      .select([
-        "activities.id",
-        "activities.timestamp",
-        "activities.activity",
-        "titles.title",
-      ])
-      .where("activities.user_id", "=", userEmail)
-      .orderBy("activities.timestamp", "desc")
-      .limit(10)
-      .offset((page - 1) * 10)
-      .execute();
+    const { data, error } = await supabase
+      .from("activities")
+      .select(`
+        id,
+        timestamp,
+        activity,
+        titles(title)
+      `)
+      .eq("user_id", userEmail)
+      .order("timestamp", { ascending: false })
+      .range((page - 1) * 10, page * 10 - 1);
 
-    return activities;
+    if (error) throw error;
+    
+    return data.map(item => ({
+      id: item.id,
+      timestamp: item.timestamp,
+      activity: item.activity,
+      title: item.titles.title
+    }));
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to fetch favorites.");
+    throw new Error("Failed to fetch activities.");
   }
 }
 
@@ -261,9 +320,16 @@ async function insertActivity(
   activity: "FAVORITED" | "WATCH_LATER"
 ) {
   try {
-    const data =
-      await sql<Question>`INSERT INTO activities (title_id, user_id, activity) VALUES (${title_id}, ${userEmail}, ${activity})`;
-    return data.rows;
+    const { error } = await supabase
+      .from("activities")
+      .insert({ 
+        title_id, 
+        user_id: userEmail, 
+        activity 
+      });
+
+    if (error) throw error;
+    return { success: true };
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to add activity.");
