@@ -1,7 +1,6 @@
 import Image from "next/image";
 import PlaceholderSVG from "@/assets/placeholder.svg";
 
-// Update the Movie component to accept a 'title' prop
 export default function Movie({ title }) {
   return (
     <div className="movie-item">
