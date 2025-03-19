@@ -4,7 +4,7 @@ import PlaceholderSVG from "@/assets/placeholder.svg";
 // Update the Movie component to accept a 'title' prop
 export default function Movie({ title }) {
   return (
-    <div>
+    <div className="movie-item">
       <Image
         className="img-movie"
         src={title.image || PlaceholderSVG}
@@ -12,6 +12,15 @@ export default function Movie({ title }) {
         width={500}
         height={500}
       />
+      <div className="hover-movie">
+        <div className="icons">
+          <p>icons should go here</p>
+        </div>
+        <div className="movie-info">
+          <p className="movie-title">{title.title}</p>
+          <p className="movie-synopsis">{title.synopsis}</p>
+        </div>
+      </div>
     </div>
   );
 }
