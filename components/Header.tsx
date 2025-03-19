@@ -10,7 +10,7 @@ import "@/styles/Header/styles.css";
 export default function Header() {
   const { data: session } = useSession();
 
-  const userName = session?.user?.name || "Guest";
+  const userEmail = session?.user?.email || "Guest";
 
   return (
     <div className="container-header">
@@ -19,7 +19,7 @@ export default function Header() {
         <p>Cinema Guru</p>
       </div>
       <div className="container-header-user">
-        <p>Welcome, {userName}!</p>
+        <p>Welcome, {userEmail}</p>
         <Button className="button-header" onClick={() => signOut()}>
           Logout
         </Button>

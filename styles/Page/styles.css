@@ -7,7 +7,7 @@
 
 .container-home-page {
     width: 100%;
-    height: auto;
+    height: 100vh;
     background-color: #00003C;
     color: white;
 }
