@@ -2,6 +2,7 @@
 
 import Button from "./Button";
 import { Film } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { signOut } from "next-auth/react";
 
@@ -21,7 +22,7 @@ export default function Header() {
       <div className="container-header-user">
         <p>Welcome, {userEmail}</p>
         <Button className="button-header" onClick={() => signOut()}>
-          Logout
+          <LogOut />
         </Button>
       </div>
     </div>
