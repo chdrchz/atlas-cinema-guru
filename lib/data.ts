@@ -81,24 +81,37 @@ export async function fetchFavorites(page: number, userEmail: string) {
     if (watchLaterError) throw watchLaterError;
     const watchLaterIds = watchLater ? watchLater.map((row) => row.title_id) : [];
 
-    // Join favorites and titles
-    const { data: titles, error: titlesError } = await supabase
+    // First get the favorite IDs
+    const { data: favoriteItems, error: favoriteError } = await supabase
       .from("favorites")
-      .select(`
-        title_id,
-        titles:titles(*)
-      `)
+      .select("title_id")
       .eq("user_id", userEmail)
-      .order("titles.released", { ascending: true })
       .range((page - 1) * 6, page * 6 - 1);
 
+    if (favoriteError) throw favoriteError;
+    
+    // If there are no favorite items, return empty array
+    if (!favoriteItems || favoriteItems.length === 0) {
+      return [];
+    }
+    
+    // Get the title IDs
+    const titleIds = favoriteItems.map(item => item.title_id);
+    
+    // Then fetch the actual titles
+    const { data: titles, error: titlesError } = await supabase
+      .from("titles")
+      .select("*")
+      .in("id", titleIds)
+      .order("released", { ascending: true });
+      
     if (titlesError) throw titlesError;
 
-    return titles.map((row) => ({
-      ...row.titles,
+    return titles.map((title) => ({
+      ...title,
       favorited: true,
-      watchLater: watchLaterIds.includes(row.title_id),
-      image: `/images/${row.title_id}.webp`,
+      watchLater: watchLaterIds.includes(title.id),
+      image: `/images/${title.id}.webp`,
     }));
   } catch (error) {
     console.error("Database Error:", error);
@@ -177,7 +190,7 @@ export async function fetchWatchLaters(page: number, userEmail: string) {
     if (favoritesError) throw favoritesError;
     const favoriteIds = favorites ? favorites.map((row) => row.title_id) : [];
 
-    // Join watchlater and titles
+    // Join watchlater and titles - FIX THE ORDER SYNTAX
     const { data: titles, error: titlesError } = await supabase
       .from("watchlater")
       .select(`
@@ -185,7 +198,7 @@ export async function fetchWatchLaters(page: number, userEmail: string) {
         titles:titles(*)
       `)
       .eq("user_id", userEmail)
-      .order("titles.released", { ascending: true })
+      .order("titles(released)", { ascending: true }) // Fixed ordering syntax
       .range((page - 1) * 6, page * 6 - 1);
 
     if (titlesError) throw titlesError;

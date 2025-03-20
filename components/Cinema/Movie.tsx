@@ -1,5 +1,7 @@
 "use client";
 
+import "@/styles/Cinema/styles.css"
+
 import Image from "next/image";
 import PlaceholderSVG from "@/assets/placeholder.svg";
 import { Clock, Star } from "lucide-react";

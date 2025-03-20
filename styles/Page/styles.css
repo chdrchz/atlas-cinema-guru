@@ -23,3 +23,7 @@
     text-align: center;
     font-size: 4rem;
 }
+
+.movie-container {
+    height: 100vh;
+}
